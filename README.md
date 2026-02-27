@@ -116,7 +116,7 @@ Executable appears in:
 dist/maia2-uci/
 add the maia2-uci.exe to your GUI
 
-##🔧 UCI Options
+## 🔧 UCI Options
 Maia Settings
 Option	Description
 MaiaSelfElo	simulated engine Elo
