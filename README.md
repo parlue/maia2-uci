@@ -90,7 +90,7 @@ An external engine can verify moves:
 
 Supported helpers:
 - Stockfish (recommended)
-- Wasp (if UCI compatible)
+- Wasp I like this engine 
 
 This keeps Maia human-like while avoiding tactical blunders.
 
