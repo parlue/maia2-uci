@@ -1,7 +1,10 @@
 # maia2-uci
 converts maia2 in a humanlike uci engine https://github.com/CSSLab/maia2
+A human-style neural chess engine based on Maia2 with optional
+blunder filtering via a helper UCI engine.
 # Maia2-UCI (Human-Style Chess Engine Wrapper)
 **Author:** Dirk D. Sommerfeld
+
 ## Motivation
 
 The main motivation of this project was to create a UCI chess engine that plays in a human-like style, similar to the SenseRobot AI.
