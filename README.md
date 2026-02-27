@@ -1,8 +1,28 @@
 # maia2-uci
-converts maia2 in a humanlike uci engine
+converts maia2 in a humanlike uci engine https://github.com/CSSLab/maia2
 # Maia2-UCI (Human-Style Chess Engine Wrapper)
-
 **Author:** Dirk D. Sommerfeld
+## Motivation
+
+The main motivation of this project was to create a UCI chess engine that plays in a human-like style, similar to the SenseRobot AI.
+While searching for approaches different from classical chess engines, I discovered the **Maia2** project.
+My idea was to build a UCI engine that runs in GUIs like Arena or BearChess and allows experimenting with different playing styles.  
+The Maia2 networks already produce very human-like moves, but since Maia2 is **not a classical search engine**, it sometimes makes very strong blunders.
+To improve stability while preserving the human style, I added an optional **helper engine**.  
+This can be any UCI engine (for example Stockfish or Wasp).
+The helper engine does **not play moves**.  
+Instead, it only evaluates Maia2’s chosen move for a short time window (for example 600 ms) and checks whether the move is a serious blunder.
+This behaviour is controlled by the parameter:
+BlunderThresholdCP
+- `200` = roughly 2 pawns difference  
+- `80`  = good setting for human-like play (0,8 pwan)
+If Maia2’s move falls outside the allowed evaluation range, the helper engine rejects it and Maia2 searches for a better alternative.  
+All final moves still come from Maia2 — the helper engine only acts as a safety check.
+The result is a flexible AI engine that can:
+- play extremely fast (e.g. 2 seconds per move),
+- maintain a human-like style,
+- and still avoid catastrophic tactical mistakes.
+I am very happy with the outcome: a configurable hybrid AI engine combining neural human-style play with classical engine stability.
 
 Maia2-UCI is a UCI chess engine wrapper that converts the
 [Maia2](https://github.com/CSSLab/maia2) neural chess model into a
@@ -172,3 +192,5 @@ python-chess library
 📜 License
 Follow Maia2 upstream license.
 Wrapper code © Dirk D. Sommerfeld.
+
+Ready to run windows download: https://drive.google.com/file/d/1wGxPVT_eokVG4oyGSYWttyJUSBrmwP_B/view?usp=sharing
