@@ -116,7 +116,7 @@ Executable appears in:
 dist/maia2-uci/
 add the maia2-uci.exe to your GUI
 
-🔧 UCI Options
+##🔧 UCI Options
 Maia Settings
 Option	Description
 MaiaSelfElo	simulated engine Elo
@@ -124,7 +124,7 @@ MaiaOppoElo	expected opponent Elo
 ModelType	blitz or rapid
 TotalMoveTimeMs	thinking time per move
 
-Strength Controls
+## Strength Controls
 Option	Description
 StrengthMode	fast or lookahead1
 TopK	candidate moves evaluated
@@ -138,7 +138,7 @@ StrengthMode = lookahead1
 TopK = 8–10
 Temperature = 15–20
 
-Helper Engine
+## Helper Engine
 Option	Description
 HelperEnginePath	full path to helper EXE
 HelperMode	off / blundercheck
@@ -151,13 +151,13 @@ HelperMode = blundercheck
 HelperMoveTimeMs = 350
 BlunderThresholdCp = 200
 
-⏱ Time Management
+##⏱ Time Management
 
 Total thinking time is strictly limited:
 TotalMoveTimeMs = Maia + Helper combined
 Default = 1000 ms per move
 
-📁 Networks
+## 📁 Networks
 
 Maia automatically downloads networks:
 blitz model
@@ -166,7 +166,7 @@ Location:
 ~/.cache/maia2/
 You may also load custom weights via Maia2 configuration.
 
-🎯 Design Philosophy
+## 🎯 Design Philosophy
 
 This project does not try to beat Stockfish.
 
@@ -176,7 +176,8 @@ explainable chess behavior
 hybrid neural + classical evaluation
 Maia chooses moves like humans.
 The helper engine only prevents catastrophic mistakes.
-⚠️ GPU Support
+
+##⚠️ GPU Support
 
 This build is CPU-only by design.
 Reasons:
@@ -184,12 +185,12 @@ PyTorch CPU version installed
 AMD GPU support under Windows is inconsistent
 CPU execution is stable and portable
 
-🙏 Credits
+##🙏 Credits
 Maia2 research team (CSSLab)
 Lichess game database
 python-chess library
 
-📜 License
+##📜 License
 Follow Maia2 upstream license.
 Wrapper code © Dirk D. Sommerfeld.
 
