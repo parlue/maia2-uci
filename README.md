@@ -19,6 +19,29 @@ This behaviour is controlled by the parameter:
 BlunderThresholdCP
 - `200` = roughly 2 pawns difference  
 - `80`  = good setting for human-like play (0,8 pwan)
+A actual List of ELO strength and the configuration. thx to Eric from schachcomputer.info for making teste and provide this sheet.
+ELO    Avg CPL   BlunderThresholdCP
+ 800   138.8            345
+ 900   121.9            305
+1000   105.0            265
+1100    88.1            220
+1200    71.2            180
+1300    53.2            135
+1400    50.6            125
+1500    48.0            120
+1600    45.4            115
+1700    42.8            105
+1800    40.2            100
+1900    37.6             95
+2000    35.0             90
+2100    32.4             80
+2200    29.8             75
+2300    27.2             70
+2400    24.6             60
+2500    22.0             55
+2600    19.4             50
+2700    16.8             40
+2800    14.2             35
 If Maia2’s move falls outside the allowed evaluation range, the helper engine rejects it and Maia2 searches for a better alternative.  
 All final moves still come from Maia2 — the helper engine only acts as a safety check.
 The result is a flexible AI engine that can:
@@ -181,6 +204,7 @@ Your GUI should now detect the engine via UCI.
 
 ## Building a Windows Executable (Optional)
 
+Ready to run windows binary's are in the bin folder (download link) 
 Install PyInstaller:
 
 ``` powershell
