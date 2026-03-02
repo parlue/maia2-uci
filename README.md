@@ -96,105 +96,225 @@ This keeps Maia human-like while avoiding tactical blunders.
 
 ---
 
-## 📦 Installation
+# maia2-uci
+
+UCI wrapper for **Maia 2** chess models.
+
+This project allows Maia neural network models to run as a **standard
+UCI chess engine**, making them compatible with chess GUIs such as:
+
+-   Arena
+-   CuteChess
+-   BanksiaGUI
+-   ChessBase
+-   Lucas Chess
+
+Maia models simulate human-like play at different Elo levels rather than
+optimal engine play.
+
+------------------------------------------------------------------------
+
+## Features
+
+-   ✅ UCI-compatible Maia engine
+-   ✅ Human-like move selection
+-   ✅ Adjustable simulated Elo
+-   ✅ Helper engine support (e.g. Stockfish)
+-   ✅ CPU and CUDA support
+-   ✅ Optional Windows executable build
+
+------------------------------------------------------------------------
+
+## Quick Start
+
+``` bash
+pip install maia2 python-chess pyyaml gdown pyzstd
+python maia2_uci.py
+```
+
+Add the engine to your chess GUI as a normal UCI engine.
+
+------------------------------------------------------------------------
+
+## Installation
 
 ### 1. Install Python
-Python 3.10–3.13 recommended.
 
-### 2. Install Maia2
-```bash
+Python **3.10 -- 3.13** recommended.
+
+Download: https://www.python.org/downloads/
+
+Verify installation:
+
+``` bash
+python --version
+```
+
+------------------------------------------------------------------------
+
+### 2. Install Dependencies
+
+``` bash
 pip install maia2
 pip install python-chess pyyaml gdown pyzstd
-download the engine maia2_uci.py
+```
 
-start per bash
+------------------------------------------------------------------------
+
+### 3. Download the Engine Script
+
+Clone the repository or download:
+
+    maia2_uci.py
+
+------------------------------------------------------------------------
+
+### 4. Run the Engine
+
+``` bash
 python maia2_uci.py
+```
 
-build a windows binary
+Your GUI should now detect the engine via UCI.
+
+------------------------------------------------------------------------
+
+## Building a Windows Executable (Optional)
+
+Install PyInstaller:
+
+``` powershell
 python -m pip install pyinstaller
-python -m PyInstaller --noconfirm --clean --onedir \
-  --name maia2-uci \
+```
+
+Build:
+
+``` powershell
+python -m PyInstaller --noconfirm --clean --onedir `
+  --name maia2-uci `
   maia2_uci.py
-Executable appears in:
+```
+
+Executable location:
+
+``` text
 dist/maia2-uci/
-add the maia2-uci.exe to your GUI
+```
 
-## 🔧 UCI Options
-Maia Settings
-Option	Description
-MaiaSelfElo	simulated engine Elo
-MaiaOppoElo	expected opponent Elo
-ModelType	blitz or rapid
-TotalMoveTimeMs	thinking time per move
+Add `maia2-uci.exe` to your chess GUI.
 
-## Strength Controls
-Option	Description
-StrengthMode	fast or lookahead1
-TopK	candidate moves evaluated
-Temperature	randomness (lower = stronger)
-AvoidBacktrack	avoid undoing previous move
-AvoidRepetition	prevent repetition loops
+------------------------------------------------------------------------
 
-Recommended:
+## UCI Options
 
-StrengthMode = lookahead1
-TopK = 8–10
-Temperature = 15–20
+### Maia Settings
 
-## Helper Engine
-Option	Description
-HelperEnginePath	full path to helper EXE
-HelperMode	off / blundercheck
-HelperMoveTimeMs	helper analysis time
-BlunderThresholdCp	replace move if worse
+  Option            Description
+  ----------------- ---------------------------------------
+  MaiaSelfElo       Simulated engine Elo
+  MaiaOppoElo       Expected opponent Elo
+  ModelType         `blitz` or `rapid`
+  TotalMoveTimeMs   Thinking time per move (milliseconds)
+
+------------------------------------------------------------------------
+
+### Helper Engine Settings
+
+Optional external engine used for evaluation assistance.
+
+  Option             Description
+  ------------------ ----------------------------------
+  HelperEnginePath   Path to helper engine executable
+  HelperNodes        Nodes searched by helper engine
 
 Example:
+
+``` text
 HelperEnginePath = C:\Engines\stockfish18.exe
-HelperMode = blundercheck
-HelperMoveTimeMs = 350
-BlunderThresholdCp = 200
+HelperNodes = 100000
+```
 
-##⏱ Time Management
+------------------------------------------------------------------------
 
-Total thinking time is strictly limited:
-TotalMoveTimeMs = Maia + Helper combined
-Default = 1000 ms per move
+### Policy Control
 
-## 📁 Networks
+Controls randomness and human-like behavior.
 
-Maia automatically downloads networks:
-blitz model
-rapid model
-Location:
-~/.cache/maia2/
-You may also load custom weights via Maia2 configuration.
+  Option       Description
+  ------------ --------------------------------------------
+  PolicyTemp   Softmax temperature (higher = more random)
+  PolicyTopK   Restrict moves to top-K candidates
+  PolicyTopP   Nucleus sampling probability cutoff
 
-## 🎯 Design Philosophy
+------------------------------------------------------------------------
 
-This project does not try to beat Stockfish.
+### Performance Settings
 
-Instead it explores:
-human-like AI play
-explainable chess behavior
-hybrid neural + classical evaluation
-Maia chooses moves like humans.
-The helper engine only prevents catastrophic mistakes.
+  Option      Description
+  ----------- -------------------
+  Device      `cpu` or `cuda`
+  Precision   `fp32` or `fp16`
+  Threads     CPU thread count
+  Hash        Memory size in MB
 
-##⚠️ GPU Support
+------------------------------------------------------------------------
 
-This build is CPU-only by design.
-Reasons:
-PyTorch CPU version installed
-AMD GPU support under Windows is inconsistent
-CPU execution is stable and portable
+## Usage in Chess GUIs
 
-##🙏 Credits
-Maia2 research team (CSSLab)
-Lichess game database
-python-chess library
+1.  Open your chess GUI.
+2.  Add new engine.
+3.  Select:
+    -   `python maia2_uci.py`
+    -   or `maia2-uci.exe`
+4.  Choose **UCI engine**.
+5.  Configure options if desired.
 
-##📜 License
-Follow Maia2 upstream license.
-Wrapper code © Dirk D. Sommerfeld.
+------------------------------------------------------------------------
 
-Ready to run windows download: https://drive.google.com/file/d/1wGxPVT_eokVG4oyGSYWttyJUSBrmwP_B/view?usp=sharing
+## Notes
+
+-   First startup may download Maia model weights automatically.
+-   CUDA requires a compatible NVIDIA GPU and installed CUDA runtime.
+-   Lower temperature values produce stronger, less random play.
+-   Higher helper nodes increase strength but reduce speed.
+
+------------------------------------------------------------------------
+
+## Troubleshooting
+
+### Engine does not start
+
+-   Ensure Python is in PATH.
+
+-   Run manually in terminal to see errors:
+
+    ``` bash
+    python maia2_uci.py
+    ```
+
+### CUDA not detected
+
+-   Verify CUDA installation.
+
+-   Try:
+
+        Device = cpu
+
+### GUI cannot detect engine
+
+-   Confirm UCI mode is selected.
+-   Check file permissions.
+
+------------------------------------------------------------------------
+
+## License
+
+Follow the maia2 license
+
+------------------------------------------------------------------------
+
+## Acknowledgements
+
+-   Maia Chess Project
+-   python-chess
+-   UCI protocol community
