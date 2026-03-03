@@ -2,7 +2,7 @@
 # Maia2 UCI wrapper with optional helper engine + stronger stability (CPU-only).
 # Author: Dirk D. Sommerfeld
 #
-# v6 changes (per request):
+# v6.2 changes (conversion mode + mate guard):
 # - Removed GPU option completely (CPU-only). No "Device" UCI option.
 # - HelperEnginePath remains a string option so you can point directly to the helper .exe.
 #
@@ -529,34 +529,138 @@ class Maia2UCIEngine:
 
         return best, best_cp, maia_cp
 
+    def _material_diff_pawns(self) -> int:
+        """Material advantage (pawns=1, N/B=3, R=5, Q=9) for side to move."""
+        if self.board is None:
+            return 0
+        values = {
+            chess.PAWN: 1,
+            chess.KNIGHT: 3,
+            chess.BISHOP: 3,
+            chess.ROOK: 5,
+            chess.QUEEN: 9,
+        }
+        stm = self.board.turn
+        my_pts = 0
+        op_pts = 0
+        for ptype, val in values.items():
+            my_pts += val * len(self.board.pieces(ptype, stm))
+            op_pts += val * len(self.board.pieces(ptype, not stm))
+        return my_pts - op_pts
+
+    def _find_mate_in_1(self):
+        """Return a legal move that mates immediately, if any."""
+        try:
+            for mv in self.board.legal_moves:
+                b2 = self.board.copy(stack=False)
+                b2.push(mv)
+                if b2.is_checkmate():
+                    return mv.uci()
+        except Exception:
+            return None
+        return None
+
+    def _helper_bestmove_and_cp(self, movetime_ms: int):
+        """Ask helper for best move in current position. Returns (uci, cp_or_mate)."""
+        if not self._ensure_helper():
+            return None, None
+        fen = self.board.fen()
+        self.helper.send(f"position fen {fen}")
+        self.helper.send(f"go movetime {movetime_ms}")
+        best, best_cp = self.helper.read_until_bestmove(timeout=max(0.2, movetime_ms/1000.0 + 0.6))
+        return best, best_cp
+
+    def _helper_eval_move_cp(self, uci_move: str, movetime_ms: int):
+        """Evaluate a specific move using helper 'searchmoves'. Returns cp_or_mate (higher is better for side to move)."""
+        if not uci_move or not self._ensure_helper():
+            return None
+        fen = self.board.fen()
+        self.helper.send(f"position fen {fen}")
+        self.helper.send(f"go movetime {movetime_ms} searchmoves {uci_move}")
+        _bm, cp = self.helper.read_until_bestmove(timeout=max(0.2, movetime_ms/1000.0 + 0.6))
+        return cp
+
     def go(self, tokens):
         start = time.perf_counter()
         deadline = start + (self.total_movetime_ms / 1000.0)
 
+        # Ensure Maia is loaded
         try:
             self._ensure_maia()
         except Exception as e:
             eprint("[maia2-uci] Maia load failed on go:", e)
+            remaining = deadline - time.perf_counter()
+            if remaining > 0:
+                time.sleep(remaining)
             print("bestmove 0000", flush=True)
             return
 
-        chosen = None
-        try:
-            chosen = self.choose_move(deadline)
-        except Exception as e:
-            eprint("[maia2-uci] choose_move error:", e)
+        # 1) Instant mate-in-1 (cheap, fixes many embarrassing misses)
+        mate1 = self._find_mate_in_1()
+        if mate1:
+            remaining = deadline - time.perf_counter()
+            if remaining > 0:
+                time.sleep(remaining)
+            self.last_engine_move = mate1
+            print(f"bestmove {mate1}", flush=True)
+            return
 
-        if chosen and self.helper_mode == "blundercheck" and self.helper_path:
+        # Conversion mode if up >= +8 pawns in material
+        diff = self._material_diff_pawns()
+        conversion_mode = (diff >= 8)
+
+        chosen = None
+
+        # 2) Conversion mode: prioritize objective conversion / mating.
+        #    Still tries to keep Maia flavor by preferring Maia if close to helper eval.
+        if conversion_mode and self.helper_mode == "blundercheck" and self.helper_path:
             remaining_ms = int(max(0, (deadline - time.perf_counter()) * 1000))
-            helper_ms = min(self.helper_movetime_ms, remaining_ms)
+            helper_ms = min(max(self.helper_movetime_ms, int(self.total_movetime_ms * 0.75)), remaining_ms)
+
+            hb, hb_cp = (None, None)
             if helper_ms >= 80:
+                hb, hb_cp = self._helper_bestmove_and_cp(helper_ms)
+
+            # if helper sees a forced mate for us, take it immediately
+            if hb and hb_cp is not None and hb_cp >= 90000:
+                chosen = hb
+            else:
                 try:
-                    best, best_cp, maia_cp = self._helper_score_move(chosen, helper_ms)
-                    if best and maia_cp is not None and best_cp is not None:
-                        if (best_cp - maia_cp) >= self.blunder_threshold_cp:
+                    chosen_maia = self.choose_move(deadline)
+                except Exception:
+                    chosen_maia = None
+
+                maia_cp = None
+                if chosen_maia and helper_ms >= 120:
+                    eval_ms = max(80, min(200, helper_ms // 3))
+                    maia_cp = self._helper_eval_move_cp(chosen_maia, eval_ms)
+
+                # If Maia is within 80cp of helper, keep Maia (style). Otherwise take helper.
+                if hb and hb_cp is not None and maia_cp is not None:
+                    chosen = chosen_maia if (hb_cp - maia_cp) <= 80 else hb
+                else:
+                    chosen = chosen_maia or hb
+
+        # 3) Normal mode: Maia move + blundercheck helper
+        if chosen is None:
+            try:
+                chosen = self.choose_move(deadline)
+            except Exception as e:
+                eprint("[maia2-uci] choose_move error:", e)
+
+            if chosen and self.helper_mode == "blundercheck" and self.helper_path:
+                remaining_ms = int(max(0, (deadline - time.perf_counter()) * 1000))
+                helper_ms = min(self.helper_movetime_ms, remaining_ms)
+                if helper_ms >= 80:
+                    try:
+                        best, best_cp, maia_cp = self._helper_score_move(chosen, helper_ms)
+                        if best and best_cp is not None and best_cp >= 90000:
                             chosen = best
-                except Exception as e:
-                    eprint("[maia2-uci] Helper error:", e)
+                        elif best and maia_cp is not None and best_cp is not None:
+                            if (best_cp - maia_cp) >= self.blunder_threshold_cp:
+                                chosen = best
+                    except Exception as e:
+                        eprint("[maia2-uci] Helper error:", e)
 
         remaining = deadline - time.perf_counter()
         if remaining > 0:
